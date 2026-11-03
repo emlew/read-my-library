@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Read My Library</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1>Read My Library</h1>
+    <p>I liked these books, and I hope you will too. Tell me what you're in the mood for.</p>
+  </header>
+
+  <main class="layout">
+    <section class="finder">
+      <form id="preferences-form" class="preferences">
+        <label>
+          Mood
+          <select name="mood" required>
+            <option value="">Choose a mood</option>
+            {% for mood in moods %}
+              <option value="{{ mood }}">{{ mood | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>
+          Genre
+          <select name="genre" required>
+            <option value="">Choose a genre</option>
+            {% for genre in genres %}
+              <option value="{{ genre }}">{{ genre.replace('-', ' ') | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>
+          Time available
+          <select name="time" required>
+            <option value="">Choose a time</option>
+            {% for time, max_hours in time_options.items() %}
+              <option value="{{ time }}">
+                {{ time | capitalize }} ({% if max_hours %}up to {{ max_hours }}h{% else %}any length{% endif %})
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <div class="form-actions">
+          <button type="submit">Find books</button>
+          <button type="button" id="browse-button" class="secondary">Browse all books</button>
+        </div>
+      </form>
+
+      <p id="status" class="status" role="status"></p>
+      <ul id="results" class="cards"></ul>
+    </section>
+
+    <aside class="reading-list">
+      <h2>Your reading list <span id="list-count" class="count"></span></h2>
+      <p id="list-empty" class="muted">No saved books yet.</p>
+      <ul id="reading-list"></ul>
+    </aside>
+  </main>
+</body>
+</html>
