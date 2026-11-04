@@ -11,8 +11,10 @@ Requires Python 3.10+.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # Flask + pytest
 ```
+
+`requirements.txt` lists only what the app needs at runtime (Flask); that is what Vercel installs.
 
 ## Run
 
@@ -31,9 +33,25 @@ pytest -v       # one line per test
 
 Tests use a fresh temporary database each time, so they never touch your real reading list.
 
+## Deploy (Vercel)
+
+The app deploys to Vercel's free Hobby plan with no configuration file:
+
+1. Sign in at [vercel.com](https://vercel.com) with GitHub.
+2. **Add New → Project**, import this repository, and click **Deploy**. Vercel detects Flask and finds `app` in `app.py`.
+3. Every push to the main branch redeploys automatically; other branches get preview URLs.
+
+How it runs there:
+
+- The Flask app becomes a single serverless function that starts on demand.
+- Files in `public/` (the JS and CSS) are served directly from Vercel's CDN at the same `/static/...` URLs Flask uses locally.
+- **The reading list is temporary on Vercel.** Its file system is read-only apart from `/tmp`, so the app stores SQLite there when the `VERCEL` environment variable is set. `/tmp` is cleared when an instance shuts down and isn't shared between instances, so saved books disappear from time to time. Recommendations and browsing are unaffected. Persistent storage would need a hosted database such as Postgres.
+
 ## Project structure
 
 ```
+app.py                # entry point: app = create_app() (used by Vercel)
+public/static/        # app.js, style.css (served by Vercel's CDN in production)
 mood_matcher/
 ├── __init__.py       # create_app(): the app factory
 ├── books.py          # curated catalog + allowed moods, genres, and time options
@@ -42,8 +60,7 @@ mood_matcher/
 ├── db.py             # one SQLite connection per request; creates the table on startup
 ├── reading_list.py   # the reading-list SQL queries
 ├── schema.sql        # reading_list table definition
-├── templates/index.html
-└── static/app.js, style.css
+└── templates/index.html
 tests/
 ├── conftest.py               # app + client fixtures, temp database
 ├── test_books.py             # catalog integrity (valid tags, unique ids, coverage)
@@ -88,6 +105,7 @@ Errors always return JSON in the form `{"error": "message"}`.
 
 ## Limitations and next steps
 
+- **The reading list doesn't persist on Vercel** (see Deploy). It does persist when run locally.
 - **Single shared reading list.** There are no user accounts, so everyone using the app shares one list. Adding users would mean a `user_id` column and authentication.
 - **Exact tag matching.** A book either has a mood or it doesn't. Weighted tags or similarity scoring would give finer rankings.
 - **Linear scan.** Each request scores every book. That is instant for 100 books. For thousands of books, the catalog would move into SQLite with indexed tag tables, filtering on time and tags in SQL.
